@@ -11,7 +11,7 @@ $(function () {
 
     var querytext = (function (){
 
-      var items = [
+      var requiredItems = [
         {name: 'name', prop: 'http://dbpedia.org/property/name'},
         {name: 'owner', prop: 'http://data.tom.sfc.keio.ac.jp/property/設置者名'},
         {name: 'zipcode', prop: 'http://dbpedia.org/property/zipcode'},
@@ -20,6 +20,9 @@ $(function () {
         {name: 'lat', prop: 'http://www.w3.org/2003/01/geo/wgs84_pos#lat'},
         {name: 'phoneNumber', prop: 'http://dbpedia.org/property/phoneNumber'},
         {name: 'website', prop: 'http://dbpedia.org/property/website'},
+      ];
+
+      var optionalItems = [
         {name: 'azukari', prop: 'http://data.tom.sfc.keio.ac.jp/property/預かり保育'},
         {name: 'bus', prop: 'http://data.tom.sfc.keio.ac.jp/property/通園バス'},
         {name: 'kyushoku', prop: 'http://data.tom.sfc.keio.ac.jp/property/給食'},
@@ -36,21 +39,42 @@ $(function () {
 
       var querytext = [
         'SELECT ',
+        // 変数をきめる
         (function () {
           var s = [];
-          items.forEach(function (item) {
+          // 常に欲しいもの
+          requiredItems.forEach(function (item) {
             s.push('?' + item.name);
+          });
+          // オプション
+          optionalItems.forEach(function (item) {
+            $('input:checked', self).each(function () {
+              if (this.value == item.name) {
+                s.push('?' + item.name);
+              }
+            });
           });
           return s.join(' ');
         })(),
         ' { ',
+        // 検索条件を決める
         (function () {
           var s = [];
-          items.forEach(function (item) {
+          // 常にほしいもの
+          requiredItems.forEach(function (item) {
             s.push('?s <' + item.prop + '> ?' + item.name + ' .');
+          });
+          // オプション
+          optionalItems.forEach(function (item) {
+            $('input:checked', self).each(function () {
+              if (this.value == item.name) {
+                s.push('?s <' + item.prop + '> ?' + item.name + ' .');
+              }
+            });
           });
           return s.join(' ');
         })(),
+        // 条件
         (function () {
           var values = [], conditions = [];
           $('input:checked', self).each(function () {
@@ -66,26 +90,43 @@ $(function () {
         '} limit 20'
       ].join('');
 
-      console.log(querytext);
-
       return querytext;
 
     })();
 
-    // $.ajax({
-    //   type: 'post',
-    //   url: 'http://data.tom.sfc.keio.ac.jp/sparql',
-    //   dataType: 'jsonp',
-    //   data: {
-    //     query: querytext
-    //   },
-    //   success: function(data) {
-    //     console.log(data);
-    //   },
-    //   error: function() {
-    //     console.log('error');
-    //   }
-    // });
+    console.log(querytext);
+
+    $.ajax({
+      type: 'post',
+      url: 'http://data.tom.sfc.keio.ac.jp/sparql',
+      dataType: 'jsonp',
+      data: {
+        query: querytext
+      },
+      success: function(data) {
+        renderResult(data);
+      },
+      error: function() {
+        console.log('error');
+      }
+    });
+
+    var renderResult = function (data) {
+      $("#result").empty();
+      data.forEach(function (youchien) {
+        $("#result").append(
+          '<tr>' +
+          '<td>' + youchien.name.value + '</td>' +
+          '<td>' + youchien.owner.value + '</td>' +
+          '<td>' + youchien.phoneNumber.value + '</td>' +
+          '<td>' + youchien.lat.value + '</td>' +
+          '<td>' + youchien.long.value + '</td>' +
+          '</tr>'
+
+        );
+      });
+    };
+
   });
 });
 
