@@ -4,6 +4,7 @@
 <title>生活班LOD</title>
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
 <script type="text/javascript">
+
 $(function () {
   $('#youchien').submit(function (e) {
     e.preventDefault();
@@ -38,24 +39,7 @@ $(function () {
       ];
 
       var querytext = [
-        'SELECT ',
-        // 変数をきめる
-        (function () {
-          var s = [];
-          // 常に欲しいもの
-          requiredItems.forEach(function (item) {
-            s.push('?' + item.name);
-          });
-          // オプション
-          optionalItems.forEach(function (item) {
-            $('input:checked', self).each(function () {
-              if (this.value == item.name) {
-                s.push('?' + item.name);
-              }
-            });
-          });
-          return s.join(' ');
-        })(),
+        'SELECT *',
         ' { ',
         // 検索条件を決める
         (function () {
@@ -69,23 +53,11 @@ $(function () {
             $('input:checked', self).each(function () {
               if (this.value == item.name) {
                 s.push('?s <' + item.prop + '> ?' + item.name + ' .');
+                s.push('filter(?' + item.name +  '="true")');
               }
             });
           });
           return s.join(' ');
-        })(),
-        // 条件
-        (function () {
-          var values = [], conditions = [];
-          $('input:checked', self).each(function () {
-            values.push(this.value);
-          });
-          if (values.length) {
-            values.forEach(function (name) {
-              conditions.push('?' + name + '=\"true\"');
-            });
-            return ' filter(' + conditions.join('||') + ') ';
-          }
         })(),
         '} limit 20'
       ].join('');
@@ -112,9 +84,21 @@ $(function () {
     });
 
     var renderResult = function (data) {
-      $("#result").empty();
+      $result = $("#result");
+      $result.empty();
+
+      $result.append(
+        '<tr>' +
+        '<th>' + '名前' + '</th>' +
+        '<th>' + '設置者名' + '</th>' +
+        '<th>' + '電話番号' + '</th>' +
+        '<th>' + '緯度' + '</th>' +
+        '<th>' + '経度' + '</th>' +
+        '</tr>'
+      );
+
       data.forEach(function (youchien) {
-        $("#result").append(
+        $result.append(
           '<tr>' +
           '<td>' + youchien.name.value + '</td>' +
           '<td>' + youchien.owner.value + '</td>' +
@@ -122,8 +106,8 @@ $(function () {
           '<td>' + youchien.lat.value + '</td>' +
           '<td>' + youchien.long.value + '</td>' +
           '</tr>'
-
         );
+
       });
     };
 
@@ -137,24 +121,18 @@ $(function () {
 </header>
 <section id="search">
   <form id="youchien" method="post" action="">
-    <!-- <p>
-      <textarea name="query" id="query" cols="80" rows="10">SELECT ?名前 ?設置者名 {
-?s <http://dbpedia.org/property/name> ?名前 .
-?s <http://data.tom.sfc.keio.ac.jp/property/設置者名> ?設置者名 .
-}</textarea>
-    </p> -->
     <ul>
       <li>
         定員とか保育時間からも検索したい
       </li>
       <li>
-        <label><input type="checkbox" name="condition" value="azukari">預かり保育</label>
+        <label><input type="checkbox" name="condition" value="azukari" checked>預かり保育</label>
       </li>
       <li>
-        <label><input type="checkbox" name="condition" value="bus">通園バス</label>
+        <label><input type="checkbox" name="condition" value="bus" checked>通園バス</label>
       </li>
       <li>
-        <label><input type="checkbox" name="condition" value="kyushoku">給食</label>
+        <label><input type="checkbox" name="condition" value="kyushoku" checked>給食</label>
       </li>
     </ul>
     <p>
